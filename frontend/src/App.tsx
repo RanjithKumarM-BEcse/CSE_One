@@ -1,122 +1,146 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+interface User {
+  id: number;
+  email: string;
+  full_name: string;
+  role: string;
 }
 
-export default App
+function App() {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('password123'); // Default for mock auth
+  const [error, setError] = useState('');
+
+  const fetchProfile = async (currentToken: string) => {
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/iam/me', {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        logout();
+      }
+    } catch (e) {
+      console.error(e);
+      logout();
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchProfile(token);
+    }
+  }, [token]);
+
+  const login = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const res = await fetch('http://localhost:8000/api/v1/iam/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setToken(data.access_token);
+        localStorage.setItem('token', data.access_token);
+      } else {
+        const errData = await res.json();
+        setError(errData.detail || 'Login failed');
+      }
+    } catch (e) {
+      setError('Cannot connect to server');
+    }
+  };
+
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+  };
+
+  if (user) {
+    return (
+      <div className="dashboard-container">
+        <header className="dashboard-header">
+          <h1>CSE One Dashboard</h1>
+          <button onClick={logout} className="logout-btn">Logout</button>
+        </header>
+        <main className="dashboard-main">
+          <div className="card">
+            <h2>Welcome, {user.full_name}</h2>
+            <p><strong>Role:</strong> <span className={`role-badge role-${user.role}`}>{user.role}</span></p>
+            <p><strong>Email:</strong> {user.email}</p>
+          </div>
+          
+          <div className="card mt-4">
+            <h3>Quick Actions</h3>
+            {user.role === 'student' && <button className="action-btn">Apply Leave</button>}
+            {user.role === 'professor' && <button className="action-btn">Take Attendance</button>}
+            {user.role === 'faculty_advisor' && <button className="action-btn">Pending Leaves</button>}
+            {user.role === 'admin' && <button className="action-btn">Manage Timetable</button>}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="login-container">
+      <div className="login-box">
+        <h1>CSE One</h1>
+        <p className="subtitle">Smart Attendance & Academic Analytics</p>
+        
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={login} className="login-form">
+          <div className="form-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              placeholder="e.g. admin@saec.ac.in"
+              required 
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required 
+            />
+            <small className="hint">Mock password is 'password123'</small>
+          </div>
+          <button type="submit" className="login-btn">Sign In</button>
+        </form>
+
+        <div className="mock-users">
+          <h4>Try logging in with:</h4>
+          <ul>
+            <li onClick={() => setEmail('admin@saec.ac.in')}>admin@saec.ac.in (Admin)</li>
+            <li onClick={() => setEmail('krishna@saec.ac.in')}>krishna@saec.ac.in (Professor)</li>
+            <li onClick={() => setEmail('lakshmi@saec.ac.in')}>lakshmi@saec.ac.in (Faculty Advisor)</li>
+            <li onClick={() => setEmail('student1@saec.ac.in')}>student1@saec.ac.in (Student)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
