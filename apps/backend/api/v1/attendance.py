@@ -19,6 +19,10 @@ def create_session(session_in: AttendanceSessionCreate, db: Session = Depends(ge
     if not period:
         raise HTTPException(status_code=404, detail="Timetable period not found")
         
+    # Security: Ensure current_user is assigned to this period, unless they are an ADMIN
+    if current_user.role != Role.ADMIN and period.professor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to start a session for this class.")
+        
     # Prevent duplicate sessions for same period and date
     existing_session = db.query(AttendanceSession).filter(
         AttendanceSession.timetable_period_id == session_in.timetable_period_id,
@@ -67,6 +71,10 @@ def mark_attendance(session_id: str, payload: BulkMarkRequest, db: Session = Dep
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
         
+    # Security: Ensure current_user owns this session, unless they are an ADMIN
+    if current_user.role != Role.ADMIN and db_session.marked_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to modify this session.")
+        
     if db_session.status != SessionStatusEnum.DRAFT:
         raise HTTPException(status_code=400, detail=f"Cannot mark attendance in a {db_session.status.value} session")
         
@@ -89,6 +97,10 @@ def commit_session(session_id: str, db: Session = Depends(get_db)):
     db_session = db.query(AttendanceSession).filter(AttendanceSession.id == session_id).first()
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
+        
+    # Security: Ensure current_user owns this session, unless they are an ADMIN
+    if current_user.role != Role.ADMIN and db_session.marked_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to commit this session.")
         
     if db_session.status != SessionStatusEnum.DRAFT:
         raise HTTPException(status_code=400, detail=f"Cannot commit a {db_session.status.value} session")
