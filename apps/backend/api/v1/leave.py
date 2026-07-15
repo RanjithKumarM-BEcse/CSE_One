@@ -11,7 +11,6 @@ from models.leave import LeaveRequest, LeaveStatusEnum
 from models.attendance import AttendanceSession, AttendanceRecord, AttendanceStatusEnum
 from schemas.leave import LeaveRequestCreate, LeaveRequestUpdate, LeaveRequestResponse
 
-from tasks.notifications import send_leave_status_email
 
 router = APIRouter()
 
@@ -78,15 +77,4 @@ def update_leave_status(request_id: str, update_in: LeaveRequestUpdate, db: Sess
 
     db.commit()
     db.refresh(leave)
-
-    # Trigger Async Notification
-    # Find student to get email
-    student = db.query(User).filter(User.id == leave.student_id).first()
-    if student:
-        send_leave_status_email.delay(
-            student_email=student.email, 
-            status=leave.status.value, 
-            reason=leave.reason
-        )
-
     return leave
