@@ -15,6 +15,8 @@ from core.config import settings
 from db.base import Base
 # Make sure models are imported so Alembic can discover them
 from models.user import User
+from models.academic import Department, Subject, Section, StudentProfile
+from models.timetable import TimetablePeriod
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
