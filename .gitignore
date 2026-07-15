@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Next.js
+.next/
+out/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+.venv/
+alembic.ini
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

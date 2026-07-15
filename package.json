@@ -1,0 +1,15 @@
+{
+  "name": "cse-one",
+  "version": "1.0.0",
+  "description": "CSE One - Enterprise Institutional Platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "cd apps/backend && uvicorn main:app --reload",
+    "build:frontend": "npm run build --workspace=frontend"
+  }
+}
