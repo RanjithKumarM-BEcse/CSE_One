@@ -19,9 +19,10 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-from api.v1 import academic, timetable
+from api.v1 import academic, timetable, attendance
 app.include_router(academic.router, prefix="/api/v1/academic", tags=["academic"])
 app.include_router(timetable.router, prefix="/api/v1/timetable", tags=["timetable"])
+app.include_router(attendance.router, prefix="/api/v1/attendance", tags=["attendance"])
 
 @app.get("/api/health")
 def health_check():

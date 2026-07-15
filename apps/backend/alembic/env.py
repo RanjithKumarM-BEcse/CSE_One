@@ -17,6 +17,7 @@ from db.base import Base
 from models.user import User
 from models.academic import Department, Subject, Section, StudentProfile
 from models.timetable import TimetablePeriod
+from models.attendance import AttendanceSession, AttendanceRecord
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
